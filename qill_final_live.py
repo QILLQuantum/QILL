@@ -2,99 +2,84 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import requests
-from datetime import datetime
 
 st.set_page_config(page_title="V2G Portugal Simulator", layout="wide")
 st.title("Real V2G Profit Simulator — Portugal 2025")
-st.markdown("**Live MIBEL prices • Realistic fleet behavior • No bullshit**")
+st.markdown("**Live MIBEL prices • Realistic fleet • No hype** • Updated Nov 2025")
 st.markdown("---")
 
-# === LIVE ELECTRICITY PRICE (Portugal - MIBEL) ===
+# === LIVE PRICE ===
 try:
-    resp = requests.get("https://api.preciodelaluz.org/v1/prices/now?zone=PT", timeout=5)
-    data = resp.json()
-    price_cpkwh = data["price"] / 1000  # €/MWh → c€/kWh
-    current_price = price_cpkwh * 10      # c€/kWh → €/MWh
-    last_update = data["date"]
+    data = requests.get("https://api.preciodelaluz.org/v1/prices/now?zone=PT", timeout=5).json()
+    price_eur_per_mwh = data["price"] / 1000 * 10   # c€/kWh → €/MWh
+    update_time = data["date"][-8:-3]
 except:
-    current_price = 68.5
-    last_update = "offline"
+    price_eur_per_mwh = 68.5
+    update_time = "??:??"
 
-col_left, col_right = st.columns([1, 2])
-with col_left:
-    st.metric("Current MIBEL Price", f"€{current_price:.1f}/MWh", 
-              delta=f"as of {last_update[-8:-3]}")
-    
-with col_right:
-    st.caption("Data source: [preciodelaluz.org](https://preciodelaluz.org) • Real OMIE market")
+st.metric("Current MIBEL Price", f"€{price_eur_per_mwh:.1f}/MWh", delta=f"{update_time}")
 
-st.markdown("### Your Virtual Power Plant")
+# === USER INPUTS ===
 col1, col2, col3 = st.columns(3)
 with col1:
-    fleet = st.slider("Tesla fleet size", 100, 5000, 1200, 100)
+    fleet = st.slider("Tesla fleet size", 100, 5000, 1200, step=100)
 with col2:
-    avg_soc = st.slider("Average SoC available for V2G", 20, 90, 65, 5)
-    soc_fraction = avg_soc / 100
+    avg_soc_pct = st.slider("Average SoC available for V2G (%)", 20, 90, 65, step=5)
 with col3:
-    battery_kwh = st.selectbox("Battery size", [60, 75, 100], index=1)
-    battery_kwh = {"60": 60, "75": 75, "100": 100}[battery_kwh]
+    battery_option = st.selectbox("Battery size", options=["60 kWh", "75 kWh", "100 kWh"], index=1)
 
-# === ENERGY AVAILABLE FROM FLEET ===
-total_energy_mwh = fleet * battery_kwh * soc_fraction / 1000  # MWh
+# <-- THIS WAS THE BUG, fixed below -->
+battery_kwh = int(battery_option.split()[0])   # extracts 60, 75 or 100 safely
 
-# === SIMULATED 24h RENEWABLES & DEMAND (based on real 2024-2025 Portugal patterns) ===
+total_energy_mwh = fleet * battery_kwh * (avg_soc_pct / 100) / 1000
+
+# === 24h CURVES (realistic Portugal 2025) ===
 h = np.arange(24)
-# Real-ish renewable generation (wind + solar) in MW for Portugal
-renewables_mw = 4500 + 3800 * np.sin((h + 4) * np.pi / 12 + 0.5)**2 + np.random.randn(24) * 400
-renewables_mw = np.clip(renewables_mw, 1000, 9500)
+renewables_mw = 4500 + 3800 * np.clip(np.sin((h + 4) * np.pi / 12 + 0.5), 0, 1)**1.8 * 1.2 + np.random.randn(24) * 350
+renewables_mw = np.clip(renewables_mw, 1500, 9800)
 
-# National demand (realistic winter weekday)
 demand_mw = 6200 + 1800 * np.sin((h + 8) * np.pi / 12) + np.random.randn(24) * 300
-
 excess_mw = renewables_mw - demand_mw
 
-# === V2G + BESS STRATEGY (realistic limits) ===
-# EVs: can discharge up to 20% of fleet capacity per hour, charge up to 30%
-ev_max_discharge_mw = total_energy_mwh * 0.20 * fleet / fleet  # simplified
-ev_max_charge_mw = total_energy_mwh * 0.30
+# === STRATEGY ===
+ev_max_discharge_mw = total_energy_mwh * 0.22   # ~22% of stored energy per hour max
+ev_max_charge_mw    = total_energy_mwh * 0.35
 
 ev_power_mw = np.where(
     excess_mw > 0,
-    -np.minimum(excess_mw * 0.6, ev_max_charge_mw),   # charge from excess green
-    np.minimum(-excess_mw * 0.7, ev_max_discharge_mw) # discharge when expensive
+    -np.minimum(excess_mw * 0.65, ev_max_charge_mw),           # charge from green excess
+    np.minimum(-excess_mw * 0.75, ev_max_discharge_mw)        # sell when price is high
 )
 
-# Small BESS (100 MW / 400 MWh class — like real projects in Portugal)
-bess_power_mw = np.clip(excess_mw - ev_power_mw, -100, 100)
+bess_power_mw = np.clip(excess_mw - ev_power_mw, -120, 120)   # 120 MW BESS
 
-# === PROFIT CALCULATION (only when we SELL i.e. discharge) ===
-sell_power_mw = -ev_power_mw[ev_power_mw < 0] - bess_power_mw[bess_power_mw < 0]
-profit_eur = (sell_power_mw * (current_price / 1000)).sum() * 0.94  # 6% losses & fees
+# === PROFIT (only when we discharge/sell) ===
+total_sold_mw = -ev_power_mw[ev_power_mw < 0] - bess_power_mw[bess_power_mw < 0]
+profit_today = (total_sold_mw * price_eur_per_mwh / 1000 * 0.94).sum()   # 6% losses/fees
 
 # === DISPLAY ===
-st.success(f"**Estimated profit today from V2G + BESS: €{profit_eur:,.0f}**")
-st.caption("Assumes smart unidirectional V2G (most Teslas today) + current spot price")
+st.success(f"**Estimated profit today: €{profit_today:,.0f}**")
+st.caption("Unidirectional V2G (what Tesla actually supports in 2025) + small BESS")
 
 col1, col2 = st.columns(2)
 with col1:
-    fig, ax = plt.subplots(figsize=(10,4))
-    ax.plot(h, renewables_mw/1000, label="Renewables (GW)", color="green", lw=2)
-    ax.plot(h, demand_mw/1000, label="Demand (GW)", color="gray", lw=2)
-    ax.legend(); ax.set_ylabel("GW"); ax.grid(alpha=0.3)
+    fig, ax = plt.subplots(figsize=(9,4))
+    ax.plot(h, renewables_mw/1000, label="Renewables GW", color="green", lw=2)
+    ax.plot(h, demand_mw/1000, label="Demand GW", color="gray", lw=2)
+    ax.set_ylabel("GW"); ax.legend(); ax.grid(alpha=0.3)
     st.pyplot(fig)
 
 with col2:
-    fig, ax = plt.subplots(figsize=(10,4))
+    fig, ax = plt.subplots(figsize=(9,4))
     ax.plot(h, ev_power_mw, label="Tesla fleet (MW)", color="#E3191C", lw=3)
-    ax.plot(h, bess_power_mw, label="Stationary BESS (MW)", color="purple", lw=2)
-    ax.axhline(0, color='black', lw=1)
-    ax.fill_between(h, ev_power_mw, 0, where=ev_power_mw<0, color="#E3191C", alpha=0.4)
+    ax.plot(h, bess_power_mw, label="BESS (MW)", color="purple", lw=2)
+    ax.axhline(0, color='k', lw=1)
+    ax.fill_between(h, ev_power_mw, 0, where=(ev_power_mw<0), color="#E3191C", alpha=0.5)
     ax.set_ylabel("Power (MW)"); ax.legend(); ax.grid(alpha=0.3)
-    ax.set_title("Your fleet selling during peak prices")
+    ax.set_title("Red area = money earned")
     st.pyplot(fig)
 
 st.balloons()
-
 
 
 
