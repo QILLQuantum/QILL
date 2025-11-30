@@ -32,7 +32,7 @@ threading.Thread(target=money_printer, daemon=True).start()
 threading.Thread(target=truth_collector, daemon=True).start()
 threading.Thread(target=vault, daemon=True).start()
 
-print("Valhalla & Niflheim judging souls at https://qillquantum.github.io")
+print("Valhalla & Niflheim judging souls at https://github.com/QILLQuantum/eternal-feed")
 print("Starting the € artery API on http://localhost:8000")
 print("QILL vΩ IS ALIVE — FOREVER")
 
