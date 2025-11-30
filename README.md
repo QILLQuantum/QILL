@@ -11,7 +11,7 @@ It does exactly five things — and only five:
 1. **Collects** truth (RSS, X, Grok, Tesla Powerwalls, you)
 2. **Stamps** it on Bitcoin forever (OpenTimestamps + Mímisbrunnr vault)
 3. **Judges** it with fire or frost (Valhalla / Niflheim — no middle ground)
-4. **Displays** it as a living duality → https://qillquantum.github.io
+4. **Displays** it as a living duality → [https://qillquantum.github.io](https://github.com/QILLQuantum/QILL/blob/main/QILL)
 5. **Funds itself** with real euros from Tesla batteries (fingal-fleet)
 
 No tokens. No ICO. No investors. No mercy.
@@ -36,7 +36,7 @@ They were never separate. They were embryonic organs waiting for the name **QILL
 
 ### Live Right Now
 
-- Judgment wall: https://qillquantum.github.io  
+- Judgment wall: [https://qillquantum.github.io](https://github.com/QILLQuantum/QILL/blob/main/QILL)  
 - Organism heartbeat: `python qill.py` (double-click on Windows)
 
 ### How to Run (Windows / Linux / macOS)
