@@ -1,0 +1,10 @@
+ETERNAL WRITE — PUBLIC FIRST-THOUGHT LEDGER
+Daniel H. Fingal (@danielhfingal)
+Started: 2024-11-23 | First entry Bitcoin-timestamped
+Last update: 2025-11-25 03:35 UTC
+=== 2024-11-23 19:42:11Z ===
+First thought provenance must be public, automatic, and cryptographically unbreakable.
+=== 2025-11-25 03:35:00Z ===
+The silence before the world notices. The ledger is complete. It is beautiful. It is mine.
+More entries appear daily at 03:35 UTC — forever.
+Raw feed: https://raw.githubusercontent.com/danielhfingal/eternal-proofs/main/ETERNAL_FEED.txt

@@ -1,0 +1,91 @@
+import { useState, useEffect } from 'react'
+import { Canvas } from '@react-three/fiber'
+import { OrbitControls } from '@react-three/drei'
+import * as THREE from 'three'
+
+// Simplified fake Midgard (no real crypto for visual demo)
+const generateFakeShare = (x, y, z) => ({ share: btoa(`${x}-${y}-${z}-fake-secret-shard`) })
+
+function ShareCube({ position, index, onDrop, shares, count }) {
+  const [hovered, setHovered] = useState(false)
+  const mesh = React.useRef()
+
+  useEffect(() => {
+    if (shares[`${position[0]+4},${position[1]+4},${position[2]+4}`]) {
+      document.getElementById('count').textContent = count
+      if (count >= 81) {
+        document.getElementById('secret').textContent = '🧊 YMIR AWAKENS • SECRET UNLOCKED: danielhfingal-tesla-fleet-master-seed-2025'
+        document.body.classList.add('glowing')
+      }
+    }
+  }, [shares, count])
+
+  return (
+    <mesh
+      ref={mesh}
+      position={position}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+      onDrop={onDrop}
+      onDragOver={e => e.preventDefault()}
+    >
+      <boxGeometry args={[0.9, 0.9, 0.9]} />
+      <meshStandardMaterial color={shares[`${position[0]+4},${position[1]+4},${position[2]+4}`] ? "#00ff41" : hovered ? "#ff0040" : "#1a1a1a"} />
+      {shares[`${position[0]+4},${position[1]+4},${position[2]+4}`] && <textGeometry args={['✓', { size: 0.5, height: 0.1 }]} position={[0,0,0.5]} />}
+    </mesh>
+  )
+}
+
+export default function App() {
+  const [shares, setShares] = useState({})
+  const [count, setCount] = useState(0)
+
+  const handleDrop = (e, pos) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = ev => {
+        try {
+          const data = JSON.parse(ev.target.result)
+          const key = `${pos[0]+4},${pos[1]+4},${pos[2]+4}`
+          setShares(prev => ({ ...prev, [key]: data.share }))
+          setCount(prev => prev + 1)
+        } catch {}
+      }
+      reader.readAsText(file)
+    }
+  }
+
+  // Generate fake shares in panel
+  useEffect(() => {
+    const panel = document.getElementById('fake-shares')
+    for (let i = 0; i < 100; i++) {
+      const div = document.createElement('div')
+      div.className = 'share-file'
+      div.draggable = true
+      div.textContent = `Share ${i+1}.json`
+      div.ondragstart = e => {
+        const fake = generateFakeShare(Math.floor(i/11), Math.floor(i%11)/10*9, i%9)
+        e.dataTransfer.setData('text/plain', JSON.stringify(fake))
+      }
+      panel.appendChild(div)
+    }
+  }, [])
+
+  return (
+    <Canvas camera={{ position: [15, 15, 15], fov: 50 }}>
+      <ambientLight intensity={0.5} />
+      <pointLight position={[10, 10, 10]} />
+      <OrbitControls />
+      {Array.from({length: 9}, (_, x) =>
+        Array.from({length: 9}, (_, y) =>
+          Array.from({length: 9}, (_, z) => {
+            const pos = [x-4, y-4, z-4]
+            return <ShareCube key={`${x}${y}${z}`} position={pos} onDrop={e => handleDrop(e, pos)} shares={shares} count={count} />
+          })
+        )
+      )}
+    </Canvas>
+  )
+}

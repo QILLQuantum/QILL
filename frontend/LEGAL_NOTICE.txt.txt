@@ -1,0 +1,13 @@
+LEGAL NOTICE — Eternal Feed v1.0 (@QILLQuantum)
+
+I disclaim all liability — users own their shit.
+
+This code is MIT open-source. Run it at your own risk.
+- Text-only; no images/media.
+- No moderation; no undo.
+- DSA/230: Deployers bear responsibility for hosted content.
+- Users: You affirm full legal/moral ownership of your lines forever.
+
+Consult a lawyer. Fork and modify as needed.
+
+QILLQuantum  November 30, 2025

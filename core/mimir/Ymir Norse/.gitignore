@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.env
+mimir_vault/
+valhalla_logs/

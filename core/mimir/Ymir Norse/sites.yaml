@@ -1,0 +1,12 @@
+sites:
+  - id: malaga-01
+    host: 192.168.1.42
+    password: "your_tesla_password"
+    homes: 42
+    country: Spain
+  - id: rift-valley-01
+    host: 192.168.88.10
+    password: "your_tesla_password"
+    homes: 38
+    country: Kenya
+  # Add your 247 sites here

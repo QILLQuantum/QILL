@@ -1,0 +1,60 @@
+// ef.js — Client-side boards + warnings. 91 lines. Modular.
+const SEGMENTS = [
+  {name:"Ancients", filter:l=>+l.id<=1000},
+  {name:"Prophets", filter:l=>Date.now()-new Date(l.ts)<86400000},
+  {name:"Poets", filter:l=>/love|heart|kiss|forever/i.test(l.text)},
+  {name:"Rebels", filter:l=>/revolution|fight|resist/i.test(l.text)},
+  {name:"Sages", filter:l=>true},
+  {name:"Mourners", filter:l=>/death|gone|pain|cry/i.test(l.text)},
+  {name:"Random", filter:l=>Math.random()<0.0001}
+];
+
+async function load() {
+  // Load vault lines
+  const vResp = await fetch('vault');
+  const vText = await vResp.text();
+  const files = [...vText.matchAll(/href="(\d{8}\.json)"/g)].map(m=>m[1]);
+  const lines = await Promise.all(files.map(f=>fetch(`vault/${f}`).then(r=>r.json())));
+  render(lines);
+  setInterval(()=>load(),60000);
+}
+
+function netPx(id) {
+  // Stub — load events for real px
+  return 0; // Placeholder; ports events.py for full
+}
+
+function render(lines) {
+  let htmlL = "<h1>VALHALLA</h1>", htmlR = "<h1>NIFLHEIM</h1>";
+  SEGMENTS.forEach(seg => {
+    let top7 = lines.filter(seg.filter).sort((a,b)=>netPx(b.id)-netPx(a.id)).slice(0,7);
+    htmlL += `<h2>${seg.name}</h2>` + top7.map(l=>`<div class="line flame" style="font-size:${Math.max(12,netPx(l.id)*3)}px">${l.t}</div>`).join('');
+    htmlR += `<h2>${seg.name}</h2>` + top7.map(l=>`<div class="line frost" style="font-size:${Math.max(12,Math.abs(netPx(l.id))*3)}px">${l.t}</div>`).join('');
+  });
+  document.getElementById("valhalla").innerHTML = htmlL;
+  document.getElementById("niflheim").innerHTML = htmlR;
+}
+
+// Quad warnings
+let layer = 0;
+const warnings = [
+  "I understand this can never be deleted. (Like that tattoo you regret.)",
+  "Not even God can remove this. (Or Ctrl+Z.)",
+  "Cool story bro, burn it forever. (YOLO.)",
+  "You bear full legal/moral responsibility forever. Type 'I accept full responsibility forever'."
+];
+function nextWarning() {
+  if (layer < 3) {
+    layer++;
+    document.getElementById("warning").innerText = warnings[layer];
+  } else {
+    const accept = document.getElementById("accept-input").value; // Add input in HTML if needed
+    if (accept === "I accept full responsibility forever") {
+      const text = document.getElementById("text").value;
+      fetch("submit.py", {method:"POST", body:new URLSearchParams({t:text, c:accept})})
+        .then(r=>r.text()).then(resp=>alert(resp.startsWith("ok")?"Stamped.":"Error: "+resp));
+    }
+  }
+}
+
+load();

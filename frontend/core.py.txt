@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+# core.py — Eternal Feed v1.0 core (YMIR + Eternal Write port)
+# Modular veins: append + stamp + vote. 0 bloat. MIT.
+
+import json
+import hashlib
+import subprocess
+import random
+from datetime import datetime as dt
+from pathlib import Path
+from typing import Dict
+
+V = Path("vault"); E = Path("events")
+V.mkdir(exist_ok=True); E.mkdir(exist_ok=True)
+
+def id(): return f"{len(list(V.glob('*.json')))+1:08d}"
+
+def write(text, ip, consent):
+    e = {
+        "id": id(),
+        "t": text[:280],
+        "ip": hashlib.sha256(ip.encode()).hexdigest()[:8],
+        "c": consent,
+        "ts": dt.utcnow().isoformat()+"Z"
+    }
+    p = V/f"{e['id']}.json"
+    p.write_text(json.dumps(e))
+    subprocess.run(["ots","stamp",str(p)], check=False)
+    return e["id"]
+
+def vote(lid, type, ip):
+    p = E/f"{dt.utcnow().isoformat()}_{lid}_{type}.json"
+    p.write_text(json.dumps({"id":lid,"v":type,"ip":hashlib.sha256(ip.encode()).hexdigest()[:8]}))
+    subprocess.run(["ots","stamp",str(p)], check=False)
+
+def px(lid):
+    return len(list(E.glob(f"*{lid}*flame*"))) - len(list(E.glob(f"*{lid}*frost*")))

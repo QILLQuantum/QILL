@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>YMIR • 9×9×9 Cryptographic Cube</title>
+  <script type="module" src="/src/main.jsx"></script>
+  <style>
+    body { margin:0; background:#0d0d0d; color:#eee; font-family:monospace; overflow:hidden }
+    #info { position:absolute; top:10px; left:10px; z-index:100; background:rgba(0,0,0,0.7); padding:15px; border-radius:8px; }
+    .glowing { text-shadow: 0 0 20px #ff0040; animation: pulse 1s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    #shares-panel { position:absolute; top:10px; right:10px; z-index:100; background:rgba(0,0,0,0.7); padding:15px; border-radius:8px; max-height:80vh; overflow-y:auto; }
+    .share-file { display:block; margin:5px 0; padding:5px; background:#333; cursor:pointer; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <h1>🧊 YMIR CUBE</h1>
+    <p>Drag shares onto the cube to solve</p>
+    <p class="glowing" id="status">Shares: <span id="count">0</span>/81 needed</p>
+    <p id="secret" style="color:#ff0040; font-size:1.2em;"></p>
+  </div>
+  <div id="shares-panel">
+    <h3>Fake Shares (Drag Me!)</h3>
+    <div id="fake-shares"></div>
+  </div>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

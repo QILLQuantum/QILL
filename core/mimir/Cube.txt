@@ -1,0 +1,156 @@
+JSON{
+  "name": "ymir-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "@react-three/fiber": "^8.17.10",
+    "@react-three/drei": "^9.115.1",
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8"
+  }
+}vite.config.js (root):JavaScriptimport { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+})index.html (root):HTML<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>YMIR • 9×9×9 Cryptographic Cube</title>
+  <script type="module" src="/src/main.jsx"></script>
+  <style>
+    body { margin:0; background:#0d0d0d; color:#eee; font-family:monospace; overflow:hidden }
+    #info { position:absolute; top:10px; left:10px; z-index:100; background:rgba(0,0,0,0.7); padding:15px; border-radius:8px; }
+    .glowing { text-shadow: 0 0 20px #ff0040; animation: pulse 1s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    #shares-panel { position:absolute; top:10px; right:10px; z-index:100; background:rgba(0,0,0,0.7); padding:15px; border-radius:8px; max-height:80vh; overflow-y:auto; }
+    .share-file { display:block; margin:5px 0; padding:5px; background:#333; cursor:pointer; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <h1>🧊 YMIR CUBE</h1>
+    <p>Drag shares onto the cube to solve</p>
+    <p class="glowing" id="status">Shares: <span id="count">0</span>/81 needed</p>
+    <p id="secret" style="color:#ff0040; font-size:1.2em;"></p>
+  </div>
+  <div id="shares-panel">
+    <h3>Fake Shares (Drag Me!)</h3>
+    <div id="fake-shares"></div>
+  </div>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>src/main.jsx:jsximport React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)src/App.jsx (the brain — simplified Midgard + cube):jsximport { useState, useEffect } from 'react'
+import { Canvas } from '@react-three/fiber'
+import { OrbitControls } from '@react-three/drei'
+import * as THREE from 'three'
+
+// Simplified fake Midgard (no real crypto for visual demo)
+const generateFakeShare = (x, y, z) => ({ share: btoa(`${x}-${y}-${z}-fake-secret-shard`) })
+
+function ShareCube({ position, index, onDrop, shares, count }) {
+  const [hovered, setHovered] = useState(false)
+  const mesh = React.useRef()
+
+  useEffect(() => {
+    if (shares[`${position[0]+4},${position[1]+4},${position[2]+4}`]) {
+      document.getElementById('count').textContent = count
+      if (count >= 81) {
+        document.getElementById('secret').textContent = '🧊 YMIR AWAKENS • SECRET UNLOCKED: danielhfingal-tesla-fleet-master-seed-2025'
+        document.body.classList.add('glowing')
+      }
+    }
+  }, [shares, count])
+
+  return (
+    <mesh
+      ref={mesh}
+      position={position}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+      onDrop={onDrop}
+      onDragOver={e => e.preventDefault()}
+    >
+      <boxGeometry args={[0.9, 0.9, 0.9]} />
+      <meshStandardMaterial color={shares[`${position[0]+4},${position[1]+4},${position[2]+4}`] ? "#00ff41" : hovered ? "#ff0040" : "#1a1a1a"} />
+      {shares[`${position[0]+4},${position[1]+4},${position[2]+4}`] && <textGeometry args={['✓', { size: 0.5, height: 0.1 }]} position={[0,0,0.5]} />}
+    </mesh>
+  )
+}
+
+export default function App() {
+  const [shares, setShares] = useState({})
+  const [count, setCount] = useState(0)
+
+  const handleDrop = (e, pos) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = ev => {
+        try {
+          const data = JSON.parse(ev.target.result)
+          const key = `${pos[0]+4},${pos[1]+4},${pos[2]+4}`
+          setShares(prev => ({ ...prev, [key]: data.share }))
+          setCount(prev => prev + 1)
+        } catch {}
+      }
+      reader.readAsText(file)
+    }
+  }
+
+  // Generate fake shares in panel
+  useEffect(() => {
+    const panel = document.getElementById('fake-shares')
+    for (let i = 0; i < 100; i++) {
+      const div = document.createElement('div')
+      div.className = 'share-file'
+      div.draggable = true
+      div.textContent = `Share ${i+1}.json`
+      div.ondragstart = e => {
+        const fake = generateFakeShare(Math.floor(i/11), Math.floor(i%11)/10*9, i%9)
+        e.dataTransfer.setData('text/plain', JSON.stringify(fake))
+      }
+      panel.appendChild(div)
+    }
+  }, [])
+
+  return (
+    <Canvas camera={{ position: [15, 15, 15], fov: 50 }}>
+      <ambientLight intensity={0.5} />
+      <pointLight position={[10, 10, 10]} />
+      <OrbitControls />
+      {Array.from({length: 9}, (_, x) =>
+        Array.from({length: 9}, (_, y) =>
+          Array.from({length: 9}, (_, z) => {
+            const pos = [x-4, y-4, z-4]
+            return <ShareCube key={`${x}${y}${z}`} position={pos} onDrop={e => handleDrop(e, pos)} shares={shares} count={count} />
+          })
+        )
+      )}
+    </Canvas>
+  )
+}

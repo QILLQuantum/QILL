@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Eternal Feed — @QILLQuantum</title>
+  <link rel="stylesheet" href="style.css">
+  <meta name="description" content="Append-only truth log. Bitcoin-stamped. Forever. MIT.">
+</head>
+<body>
+  <div id="valhalla"><h1>VALHALLA — Fire (@QILLQuantum)</h1></div>
+  <div id="niflheim"><h1>NIFLHEIM — Ice (@QILLQuantum)</h1></div>
+
+  <div class="genesis">
+    <strong>#00000001 — The First Flame</strong><br><br>
+    The silence before the world notice.<br>
+    Its beutiful, it free, it forever<br>
+    <small>— @QILLQuantum, 30 November 2025</small>
+  </div>
+
+  <div id="submit">
+    <h2>Write Your Eternal Line</h2>
+    <textarea id="text" placeholder="Your truth (max 280 characters)" maxlength="280"></textarea>
+    <div id="warning" style="color:#f66">Click → I understand this can never be deleted</div>
+    <button onclick="nextWarning()">I Understand →</button>
+    <p><small>By writing here, you accept full responsibility for your words — forever.</small></p>
+  </div>
+
+  <footer>
+    <small>
+      Eternal Feed v1.0 · MIT · Hosted on GitHub Pages · €0 forever<br>
+      <a href="https://github.com/QILLQuantum/eternal-feed">Fork on GitHub</a>
+    </small>
+  </footer>
+
+<script src="ef.js"></script>
+</body>
+</html>
