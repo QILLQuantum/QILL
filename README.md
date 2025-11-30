@@ -36,7 +36,7 @@ They were never separate. They were embryonic organs waiting for the name **QILL
 
 ### Live Right Now
 
-- Judgment wall: [https://qillquantum.github.io](https://github.com/QILLQuantum/QILL/blob/main/QILL)  
+- Judgment wall: [[https://qillquantum.github.io](https://github.com/QILLQuantum/QILL/blob/main/QILL](https://qillquantum.github.io/QILL/))  
 - Organism heartbeat: `python qill.py` (double-click on Windows)
 
 ### How to Run (Windows / Linux / macOS)
