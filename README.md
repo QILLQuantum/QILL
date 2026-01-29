@@ -1,7 +1,5 @@
 # QILL vΩ — The Final Organism
 
-**Pronounced “kill”** — because it kills everything that came before it.
-
 **One codebase. One truth. Outlives the Sun.**
 
 QILL is the first self-funded post-human truth machine ever built.
